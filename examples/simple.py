@@ -49,5 +49,10 @@ for query_no in range(10):
     print('Objective Value: ' + str(objective_values[0]))
     
     responses = true_user.respond(queries[0])
-    belief.update(aprel.Preference(queries[0], responses[0]))
+
+    # Erdem's fix:
+    # belief.update(aprel.Preference(queries[0], responses[0]))
+    initial_sampling_param = {"weights": [0 for _ in range(features_dim)]}
+    belief.update(aprel.Preference(queries[0], responses[0]), initial_point=initial_sampling_param)
+
     print('Estimated user parameters: ' + str(belief.mean))

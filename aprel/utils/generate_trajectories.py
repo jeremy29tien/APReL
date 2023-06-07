@@ -72,8 +72,20 @@ def generate_trajectories_randomly(env: Environment,
             obs = env.reset()
             if env_has_rgb_render:
                 try:
-                    frames = [np.uint8(env.render(mode='rgb_array'))]
-                except:
+                    img = env.render(mode='rgb_array')
+                    # print("img:", img.shape)
+                    frames = [np.uint8(img)]
+                except TypeError:
+                    robosuite_env = env.env.env
+                    full_obs = robosuite_env._get_observations()
+                    # Grab image data (assume relevant camera name is the first in the env camera array)
+                    img = full_obs[robosuite_env.camera_names[0] + "_image"]
+                    # img = robosuite_env.get_pixel_obs()
+                    # env.render()
+                    # print("img:", img.shape)
+                    frames = [np.uint8(img)]
+                except Exception:
+                    print("OH NO! Falling into except and setting env_has_rgb_render to False.")
                     env_has_rgb_render = False
             done = False
             t = 0
@@ -83,7 +95,14 @@ def generate_trajectories_randomly(env: Environment,
                 obs, _, done, _ = env.step(act)
                 t += 1
                 if env_has_rgb_render:
-                    frames.append(np.uint8(env.render(mode='rgb_array')))
+                    try:
+                        frames.append(np.uint8(env.render(mode='rgb_array')))
+                    except TypeError:
+                        robosuite_env = env.env.env
+                        full_obs = robosuite_env._get_observations()
+                        # Grab image data (assume relevant camera name is the first in the env camera array)
+                        img = full_obs[robosuite_env.camera_names[0] + "_image"]
+                        frames.append(np.uint8(img))
             traj.append((obs, None))
             if env_has_rgb_render:
                 clip = ImageSequenceClip(frames, fps=30)

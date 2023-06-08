@@ -260,6 +260,8 @@ class CustomFeatureUser(SoftmaxUser):
         super(CustomFeatureUser, self).__init__(params_dict_copy)
 
     def reward(self, trajectories: Union[Trajectory, TrajectorySet]) -> Union[float, np.array]:
+        # TODO: Can try to pre-compute these values and store them in the
+        #  Trajectory/TrajectorySet for speed up if necessary
         if isinstance(trajectories, TrajectorySet):
             features_matrix = np.array([self.params['feature_func'](trajectory.trajectory) for trajectory in trajectories])
             return np.dot(features_matrix, self.params['weights'])

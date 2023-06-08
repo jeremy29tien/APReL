@@ -8,7 +8,7 @@ from aprel.learning.data_types import DemonstrationQuery, Demonstration
 from aprel.learning.data_types import PreferenceQuery, Preference
 from aprel.learning.data_types import WeakComparisonQuery, WeakComparison
 from aprel.learning.data_types import FullRankingQuery, FullRanking
-from aprel.learning.user_models import User, SoftmaxUser, HumanUser
+from aprel.learning.user_models import User, SoftmaxUser, HumanUser, CustomFeatureUser
 from aprel.learning.belief_models import Belief, LinearRewardBelief, SamplingBasedBelief
 
 from aprel.querying.acquisition_functions import mutual_information, volume_removal, disagreement, regret, random, thompson

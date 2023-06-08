@@ -240,6 +240,34 @@ class SoftmaxUser(User):
         return np.dot(trajectories.features, self.params['weights'])
 
 
+class CustomFeatureUser(SoftmaxUser):
+    """
+    CustomFeatureUser is a Softmax User, but instead performs reward computations based on a feature function
+    that is different from the one already specified by the environment (Trajectory.features).
+
+    Parameters:
+        params_dict (Dict): the parameters of the softmax user model, which are:
+            - `feature_func` (function): List of state-action tuples -> np.array of feature values
+
+    Raises:
+        AssertionError: if a `feature_func` parameter is not provided in the :py:attr:`params_dict`.
+    """
+
+    def __init__(self, params_dict: Dict):
+        assert ('feature_func' in params_dict), 'feature_func is a required parameter for the custom feature user model.'
+        params_dict_copy = params_dict.copy()
+
+        super(CustomFeatureUser, self).__init__(params_dict_copy)
+
+    def reward(self, trajectories: Union[Trajectory, TrajectorySet]) -> Union[float, np.array]:
+        if isinstance(trajectories, TrajectorySet):
+            features_matrix = np.array([self.params['feature_func'](trajectory.trajectory) for trajectory in trajectories])
+            return np.dot(features_matrix, self.params['weights'])
+        else:
+            features = self.params['feature_func'](trajectories.trajectory)
+            return np.dot(features, self.params['weights'])
+
+
 class HumanUser(User):
     """
     Human user class whose response model is unknown. This class is useful for interactive runs, where

@@ -178,6 +178,88 @@ class Preference(QueryWithResponse):
         self.response = response
 
 
+class NLCommandQuery(Query):
+    """
+    A command query is one where the user is presented with a reference trajectory and asked for a command to correct the trajectory.
+
+    Parameters:
+        slate (TrajectorySet or List[Trajectory]): The set of trajectories that will be presented to the user.
+
+    Attributes:
+        response_set (numpy.array): The set of possible responses to the query.
+
+    Raises:
+        AssertionError: if slate has anything other than 1 trajectory.
+    """
+
+    def __init__(self, slate: Union[TrajectorySet, List[Trajectory]]):
+        super(NLCommandQuery, self).__init__()
+        assert isinstance(slate, TrajectorySet) or isinstance(slate,
+                                                              list), 'Query constructor requires a TrajectorySet object for the slate.'
+        self.slate = slate
+        assert (self.K == 1), 'Command queries must have exactly 1 reference trajectory.'
+
+    @property
+    def slate(self) -> TrajectorySet:
+        """Returns a :class:`.TrajectorySet` of the trajectories in the query."""
+        return self._slate
+
+    @slate.setter
+    def slate(self, new_slate: Union[TrajectorySet, List[Trajectory]]):
+        """Sets the slate of trajectories in the query."""
+        self._slate = new_slate if isinstance(new_slate, TrajectorySet) else TrajectorySet(new_slate)
+        self.K = self._slate.size
+        # TODO: I'm pretty sure we don't need a response set?
+        # self.response_set = np.arange(self.K)
+
+    def visualize(self, delay: float = 0.) -> str:
+        """Visualizes the query and interactively asks for a response.
+
+        Args:
+            delay (float): The waiting time between each trajectory visualization in seconds.
+
+        Returns:
+            int: The response of the user.
+        """
+        print('Playing reference trajectory...')
+        time.sleep(delay)
+        self.slate[0].visualize()
+        selection = None
+
+        while selection is None:
+            selection = input('How would you improve this trajectory? Enter a command: ')
+            # TODO: Improve this to check for whether the command is valid or not?
+            #  We could do this by using the `response_set` variable to instead keep track of valid strings.
+            if not isinstance(selection, str):
+                selection = None
+        return selection
+
+
+class NLCommand(QueryWithResponse):
+    """
+    A NLCommand feedback.
+
+    Contains the :class:`.NLCommandQuery` the user responded to and the response.
+
+    Parameters:
+        query (NLCommandQuery): The query for which the feedback was given.
+        response (int): The response of the user to the query.
+
+    Attributes:
+        response (int): The response of the user to the query.
+
+    Raises:
+        AssertionError: if the response is not in the response set of the query.
+    """
+
+    def __init__(self, query: NLCommandQuery, response: int):
+        super(NLCommand, self).__init__(query)
+        # TODO: Update this if we update response_set to check for valid string commands.
+        # assert (response in self.query.response_set), 'Response ' + str(
+        #     response) + ' is out of bounds for a slate size of ' + str(self.query.K) + '.'
+        self.response = response
+
+
 class WeakComparisonQuery(Query):
     """
     A weak comparison query is one where the user is presented with two trajectories and asked for their favorite among

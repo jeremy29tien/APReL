@@ -76,6 +76,7 @@ class User:
             float: The loglikelihood of :py:attr:`data` under the user.
         """
         logprobs = self.response_logprobabilities(data)
+        # TODO: add case for NLCommand (?)
         if isinstance(data, Preference) or isinstance(data, WeakComparison):
             idx = np.where(data.query.response_set == data.response)[0][0]
         elif isinstance(data, FullRanking):
@@ -173,6 +174,8 @@ class SoftmaxUser(User):
         if isinstance(query, PreferenceQuery):
             rewards = self.params['beta'] * self.reward(query.slate)
             return rewards - ssp.logsumexp(rewards)
+
+        # TODO: add case for NLCommandQuery
             
         elif isinstance(query, WeakComparisonQuery):
             rewards = self.params['beta'] * self.reward(query.slate)
@@ -205,6 +208,8 @@ class SoftmaxUser(User):
         elif isinstance(data, Preference):
             rewards = self.params['beta'] * self.reward(data.query.slate)
             return rewards[data.response] - ssp.logsumexp(rewards)
+
+        # TODO: add case for NLCommand
             
         elif isinstance(data, WeakComparison):
             rewards = self.params['beta'] * self.reward(data.query.slate)

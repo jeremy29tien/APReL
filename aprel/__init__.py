@@ -6,6 +6,7 @@ from aprel.basics.trajectory import Trajectory, TrajectorySet
 from aprel.learning.data_types import Query, QueryWithResponse
 from aprel.learning.data_types import DemonstrationQuery, Demonstration
 from aprel.learning.data_types import PreferenceQuery, Preference
+from aprel.learning.data_types import NLCommandQuery, NLCommand
 from aprel.learning.data_types import WeakComparisonQuery, WeakComparison
 from aprel.learning.data_types import FullRankingQuery, FullRanking
 from aprel.learning.user_models import User, SoftmaxUser, HumanUser, CustomFeatureUser

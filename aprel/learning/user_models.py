@@ -176,6 +176,12 @@ class SoftmaxUser(User):
             return rewards - ssp.logsumexp(rewards)
 
         # TODO: add case for NLCommandQuery
+        #   Compute the (log of the) probability of responding with a particular value (positive or negative) for a
+        #   particular feature (speed, height, etc.)
+        #   This is comprised of two parts: (1) the probability of selecting a feature f given query Q and weights w ( P(f | Q, w) ),
+        #   and (2) the probability of selecting the direction (pos or neg) of that feature given f, Q, w ( P(d | f, Q, w) ).
+        #   For (1), we will just compute the numerator, since computing the denominator is difficult.
+        #   For (2), we will handle the choice between positive or negative using softmax boltzmann rationality.
             
         elif isinstance(query, WeakComparisonQuery):
             rewards = self.params['beta'] * self.reward(query.slate)
@@ -210,6 +216,12 @@ class SoftmaxUser(User):
             return rewards[data.response] - ssp.logsumexp(rewards)
 
         # TODO: add case for NLCommand
+        #   Compute the (log of the) probability of responding with a particular value (positive or negative) for a
+        #   particular feature (speed, height, etc.)
+        #   This is comprised of two parts: (1) the probability of selecting a feature f given query Q and weights w ( P(f | Q, w) ),
+        #   and (2) the probability of selecting the direction (pos or neg) of that feature given f, Q, w ( P(d | f, Q, w) ).
+        #   For (1), we will just compute the numerator, since computing the denominator is difficult.
+        #   For (2), we will handle the choice between positive or negative using softmax boltzmann rationality.
             
         elif isinstance(data, WeakComparison):
             rewards = self.params['beta'] * self.reward(data.query.slate)

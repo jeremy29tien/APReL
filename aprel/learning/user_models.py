@@ -5,8 +5,8 @@ import scipy.special as ssp
 from copy import deepcopy
 
 from aprel.basics import Trajectory, TrajectorySet
-from aprel.learning import Query, PreferenceQuery, WeakComparisonQuery, FullRankingQuery
-from aprel.learning import QueryWithResponse, Demonstration, Preference, WeakComparison, FullRanking
+from aprel.learning import Query, PreferenceQuery, WeakComparisonQuery, FullRankingQuery, NLCommandQuery
+from aprel.learning import QueryWithResponse, Demonstration, Preference, WeakComparison, FullRanking, NLCommand
 
 
 class User:
@@ -182,7 +182,10 @@ class SoftmaxUser(User):
         #   and (2) the probability of selecting the direction (pos or neg) of that feature given f, Q, w ( P(d | f, Q, w) ).
         #   For (1), we will just compute the numerator, since computing the denominator is difficult.
         #   For (2), we will handle the choice between positive or negative using softmax boltzmann rationality.
-            
+
+        elif isinstance(query, NLCommandQuery):
+            pass
+
         elif isinstance(query, WeakComparisonQuery):
             rewards = self.params['beta'] * self.reward(query.slate)
             logprobs = np.zeros((3))
@@ -222,6 +225,17 @@ class SoftmaxUser(User):
         #   and (2) the probability of selecting the direction (pos or neg) of that feature given f, Q, w ( P(d | f, Q, w) ).
         #   For (1), we will just compute the numerator, since computing the denominator is difficult.
         #   For (2), we will handle the choice between positive or negative using softmax boltzmann rationality.
+
+        elif isinstance(data, NLCommand):
+            d = self.params['weights'].shape[0]
+            xf = data.response / np.linalg.norm(data.response)
+            feature_diff = data.query.ideal_trajectory.features - data.query.slate[0].features
+            lognumerator = np.log(d) + np.dot(xf, self.params['weights']) * np.dot(xf, feature_diff)
+            assert type(lognumerator) is float
+            logdenominator = np.log(np.dot(self.params['weights'], feature_diff))
+            assert type(logdenominator) is float
+
+            return lognumerator - logdenominator
             
         elif isinstance(data, WeakComparison):
             rewards = self.params['beta'] * self.reward(data.query.slate)

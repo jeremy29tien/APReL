@@ -5,7 +5,7 @@ Modules for queries and user responses.
     K. Li, M. Tucker, E. Biyik, E. Novoseller, J. W. Burdick, Y. Sui, D. Sadigh, Y. Yue, A. D. Ames;
     "ROIAL: Region of Interest Active Learning for Characterizing Exoskeleton Gait Preference Landscapes", ICRA'21.
 """
-from typing import List, Union
+from typing import List, Union, Callable
 from copy import deepcopy
 import itertools
 import numpy as np
@@ -187,17 +187,21 @@ class NLCommandQuery(Query):
 
     Attributes:
         response_set (numpy.array): The set of possible responses to the query.
+        ideal_trajectory (Trajectory): The 'ideal' trajectory under the user's reward.
+        lang_encoder_func (Callable): Function that converts strings to a np.array.
 
     Raises:
         AssertionError: if slate has anything other than 1 trajectory.
     """
 
-    def __init__(self, slate: Union[TrajectorySet, List[Trajectory]]):
+    def __init__(self, slate: Union[TrajectorySet, List[Trajectory]], ideal_trajectory: Trajectory, lang_encoder_func: Callable):
         super(NLCommandQuery, self).__init__()
         assert isinstance(slate, TrajectorySet) or isinstance(slate,
                                                               list), 'Query constructor requires a TrajectorySet object for the slate.'
         self.slate = slate
         assert (self.K == 1), 'Command queries must have exactly 1 reference trajectory.'
+        self.ideal_trajectory = ideal_trajectory
+        self.lang_encoder_func = lang_encoder_func
 
     @property
     def slate(self) -> TrajectorySet:
@@ -212,7 +216,7 @@ class NLCommandQuery(Query):
         # TODO: I'm pretty sure we don't need a response set?
         # self.response_set = np.arange(self.K)
 
-    def visualize(self, delay: float = 0.) -> str:
+    def visualize(self, delay: float = 0.) -> np.array:
         """Visualizes the query and interactively asks for a response.
 
         Args:
@@ -232,6 +236,8 @@ class NLCommandQuery(Query):
             #  We could do this by using the `response_set` variable to instead keep track of valid strings.
             if not isinstance(selection, str):
                 selection = None
+
+        selection = self.lang_encoder_func(selection)
         return selection
 
 
@@ -243,16 +249,16 @@ class NLCommand(QueryWithResponse):
 
     Parameters:
         query (NLCommandQuery): The query for which the feedback was given.
-        response (int): The response of the user to the query.
+        response (np.array): The response of the user to the query.
 
     Attributes:
-        response (int): The response of the user to the query.
+        response (np.array): The response of the user to the query.
 
     Raises:
         AssertionError: if the response is not in the response set of the query.
     """
 
-    def __init__(self, query: NLCommandQuery, response: int):
+    def __init__(self, query: NLCommandQuery, response: np.array):
         super(NLCommand, self).__init__(query)
         # TODO: Update this if we update response_set to check for valid string commands.
         # assert (response in self.query.response_set), 'Response ' + str(

@@ -77,9 +77,11 @@ class User:
             float: The loglikelihood of :py:attr:`data` under the user.
         """
         logprobs = self.response_logprobabilities(data)
-        # TODO: add case for NLCommand (?)
         if isinstance(data, Preference) or isinstance(data, WeakComparison):
             idx = np.where(data.query.response_set == data.response)[0][0]
+        # TODO: add case for NLCommand (?)
+        elif isinstance(data, NLCommand):
+            raise NotImplementedError
         elif isinstance(data, FullRanking):
             idx = np.where((data.query.response_set == data.response).all(axis=1))[0][0]
         return logprobs[idx]

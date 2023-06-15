@@ -7,6 +7,7 @@ from copy import deepcopy
 from aprel.basics import Trajectory, TrajectorySet
 from aprel.learning import Query, PreferenceQuery, WeakComparisonQuery, FullRankingQuery, NLCommandQuery
 from aprel.learning import QueryWithResponse, Demonstration, Preference, WeakComparison, FullRanking, NLCommand
+import aprel
 
 
 class User:
@@ -175,7 +176,7 @@ class SoftmaxUser(User):
             rewards = self.params['beta'] * self.reward(query.slate)
             return rewards - ssp.logsumexp(rewards)
 
-        # TODO: add case for NLCommandQuery
+        # Case for NLCommandQuery (old ish comment):
         #   Compute the (log of the) probability of responding with a particular value (positive or negative) for a
         #   particular feature (speed, height, etc.)
         #   This is comprised of two parts: (1) the probability of selecting a feature f given query Q and weights w ( P(f | Q, w) ),
@@ -183,8 +184,24 @@ class SoftmaxUser(User):
         #   For (1), we will just compute the numerator, since computing the denominator is difficult.
         #   For (2), we will handle the choice between positive or negative using softmax boltzmann rationality.
 
+        # As an ad hoc solution, we'll just sample a bunch of random xf's in the unit ball (norm=1)
+        # in order to model the different responses we may get.
         elif isinstance(query, NLCommandQuery):
-            pass
+            d = self.params['weights'].shape[0]
+
+            num_xf_samples = 10
+            xfs = [aprel.util_funs.get_random_normalized_vector(d) for _ in range(num_xf_samples)]
+
+            logprobs = np.zeros(num_xf_samples)
+            feature_diff = query.ideal_trajectory.features - query.slate[0].features
+            for i, xf in enumerate(xfs):
+                lognumerator = np.log(d) + np.dot(xf, self.params['weights']) * np.dot(xf, feature_diff)
+                assert type(lognumerator) is float
+                logdenominator = np.log(np.dot(self.params['weights'], feature_diff))
+                assert type(logdenominator) is float
+                logprobs[i] = lognumerator - logdenominator
+
+            return logprobs
 
         elif isinstance(query, WeakComparisonQuery):
             rewards = self.params['beta'] * self.reward(query.slate)
@@ -217,14 +234,6 @@ class SoftmaxUser(User):
         elif isinstance(data, Preference):
             rewards = self.params['beta'] * self.reward(data.query.slate)
             return rewards[data.response] - ssp.logsumexp(rewards)
-
-        # TODO: add case for NLCommand
-        #   Compute the (log of the) probability of responding with a particular value (positive or negative) for a
-        #   particular feature (speed, height, etc.)
-        #   This is comprised of two parts: (1) the probability of selecting a feature f given query Q and weights w ( P(f | Q, w) ),
-        #   and (2) the probability of selecting the direction (pos or neg) of that feature given f, Q, w ( P(d | f, Q, w) ).
-        #   For (1), we will just compute the numerator, since computing the denominator is difficult.
-        #   For (2), we will handle the choice between positive or negative using softmax boltzmann rationality.
 
         elif isinstance(data, NLCommand):
             d = self.params['weights'].shape[0]

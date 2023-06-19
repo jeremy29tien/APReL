@@ -194,13 +194,13 @@ class NLCommandQuery(Query):
         AssertionError: if slate has anything other than 1 trajectory.
     """
 
-    def __init__(self, slate: Union[TrajectorySet, List[Trajectory]], ideal_trajectory: Trajectory, lang_encoder_func: Callable):
+    def __init__(self, slate: Union[TrajectorySet, List[Trajectory]], lang_encoder_func: Callable):
         super(NLCommandQuery, self).__init__()
         assert isinstance(slate, TrajectorySet) or isinstance(slate,
                                                               list), 'Query constructor requires a TrajectorySet object for the slate.'
         self.slate = slate
         assert (self.K == 1), 'Command queries must have exactly 1 reference trajectory.'
-        self.ideal_trajectory = ideal_trajectory
+        # self.ideal_trajectory = ideal_trajectory
         self.lang_encoder_func = lang_encoder_func
 
     @property

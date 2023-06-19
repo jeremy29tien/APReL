@@ -68,6 +68,7 @@ class User:
     def loglikelihood(self, data: QueryWithResponse) -> float:
         """
         Returns the loglikelihood of the given user feedback under the user.
+        This just uses the response_logprobabilities method.
         
         Args:
             data (QueryWithResponse): The data (which keeps a query and a response) for which the
@@ -125,6 +126,7 @@ class User:
         """
         return np.exp(self.loglikelihood_dataset(dataset))
 
+    # TODO: update this to be compatible with not necessarily responding from a response set?
     def respond(self, queries: Union[Query, List[Query]]) -> List:
         """
         Simulates the user's responses to the given queries.
@@ -195,6 +197,7 @@ class SoftmaxUser(User):
             xfs = [aprel.util_funs.get_random_normalized_vector(d) for _ in range(num_xf_samples)]
 
             logprobs = np.zeros(num_xf_samples)
+            # TODO: correct this line; query no longer has a ideal_trajectory attr.
             feature_diff = query.ideal_trajectory.features - query.slate[0].features
             for i, xf in enumerate(xfs):
                 lognumerator = np.log(d) + np.dot(xf, self.params['weights']) * np.dot(xf, feature_diff)
@@ -223,6 +226,8 @@ class SoftmaxUser(User):
             return logprobs
         raise NotImplementedError("response_logprobabilities is not defined for demonstration queries.")
 
+    # Note: There isn't any reason why loglikelihood does not call response_logprobabilities.
+    # In the parent User class, loglikelihood does just call response_logprobabilities.
     def loglikelihood(self, data: QueryWithResponse) -> float:
         """
         Overwrites the parent's method. See :class:`.User` for more information.
@@ -240,6 +245,8 @@ class SoftmaxUser(User):
         elif isinstance(data, NLCommand):
             d = self.params['weights'].shape[0]
             xf = data.response / np.linalg.norm(data.response)
+
+            # TODO: correct this line; query no longer has a ideal_trajectory attr.
             feature_diff = data.query.ideal_trajectory.features - data.query.slate[0].features
             lognumerator = np.log(d) + np.dot(xf, self.params['weights']) * np.dot(xf, feature_diff)
             assert type(lognumerator) is float

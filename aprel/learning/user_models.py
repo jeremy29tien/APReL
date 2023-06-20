@@ -197,8 +197,18 @@ class SoftmaxUser(User):
             xfs = [aprel.util_funs.get_random_normalized_vector(d) for _ in range(num_xf_samples)]
 
             logprobs = np.zeros(num_xf_samples)
-            # TODO: correct this line; query no longer has a ideal_trajectory attr.
-            feature_diff = query.ideal_trajectory.features - query.slate[0].features
+
+            # Find ideal trajectory's features \phi star for log likelihood computation
+            ideal_trajectory = None
+            ideal_reward = -np.inf
+            assert 'trajectory_set' in self.params
+            for trajectory in self.params['trajectory_set']:
+                r = self.reward(trajectory)
+                if r > ideal_reward:
+                    ideal_reward = r
+                    ideal_trajectory = trajectory
+
+            feature_diff = ideal_trajectory.features - query.slate[0].features
             for i, xf in enumerate(xfs):
                 lognumerator = np.log(d) + np.dot(xf, self.params['weights']) * np.dot(xf, feature_diff)
                 assert type(lognumerator) is float
@@ -246,8 +256,17 @@ class SoftmaxUser(User):
             d = self.params['weights'].shape[0]
             xf = data.response / np.linalg.norm(data.response)
 
-            # TODO: correct this line; query no longer has a ideal_trajectory attr.
-            feature_diff = data.query.ideal_trajectory.features - data.query.slate[0].features
+            # Find ideal trajectory's features \phi star for log likelihood computation
+            ideal_trajectory = None
+            ideal_reward = -np.inf
+            assert 'trajectory_set' in self.params
+            for trajectory in self.params['trajectory_set']:
+                r = self.reward(trajectory)
+                if r > ideal_reward:
+                    ideal_reward = r
+                    ideal_trajectory = trajectory
+
+            feature_diff = ideal_trajectory.features - data.query.slate[0].features
             lognumerator = np.log(d) + np.dot(xf, self.params['weights']) * np.dot(xf, feature_diff)
             assert type(lognumerator) is float
             logdenominator = np.log(np.dot(self.params['weights'], feature_diff))

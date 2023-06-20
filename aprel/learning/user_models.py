@@ -191,7 +191,7 @@ class SoftmaxUser(User):
         # As an ad hoc solution, we'll just sample a bunch of random xf's in the unit ball (norm=1)
         # in order to model the different responses we may get.
         elif isinstance(query, NLCommandQuery):
-            d = self.params['weights'].shape[0]
+            d = len(self.params['weights'])
 
             num_xf_samples = 10
             xfs = [aprel.util_funs.get_random_normalized_vector(d) for _ in range(num_xf_samples)]
@@ -253,7 +253,7 @@ class SoftmaxUser(User):
             return rewards[data.response] - ssp.logsumexp(rewards)
 
         elif isinstance(data, NLCommand):
-            d = self.params['weights'].shape[0]
+            d = len(self.params['weights'])
             xf = data.response / np.linalg.norm(data.response)
 
             # Find ideal trajectory's features \phi star for log likelihood computation
@@ -268,9 +268,9 @@ class SoftmaxUser(User):
 
             feature_diff = ideal_trajectory.features - data.query.slate[0].features
             lognumerator = np.log(d) + np.dot(xf, self.params['weights']) * np.dot(xf, feature_diff)
-            assert type(lognumerator) is float
+            assert np.isscalar(lognumerator)
             logdenominator = np.log(np.dot(self.params['weights'], feature_diff))
-            assert type(logdenominator) is float
+            assert np.isscalar(logdenominator)
 
             return lognumerator - logdenominator
             

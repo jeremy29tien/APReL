@@ -180,19 +180,11 @@ class SoftmaxUser(User):
             rewards = self.params['beta'] * self.reward(query.slate)
             return rewards - ssp.logsumexp(rewards)
 
-        # Case for NLCommandQuery (old ish comment):
-        #   Compute the (log of the) probability of responding with a particular value (positive or negative) for a
-        #   particular feature (speed, height, etc.)
-        #   This is comprised of two parts: (1) the probability of selecting a feature f given query Q and weights w ( P(f | Q, w) ),
-        #   and (2) the probability of selecting the direction (pos or neg) of that feature given f, Q, w ( P(d | f, Q, w) ).
-        #   For (1), we will just compute the numerator, since computing the denominator is difficult.
-        #   For (2), we will handle the choice between positive or negative using softmax boltzmann rationality.
-
-        # As an ad hoc solution, we'll just sample a bunch of random xf's in the unit ball (norm=1)
-        # in order to model the different responses we may get.
         elif isinstance(query, NLCommandQuery):
             d = len(self.params['weights'])
 
+            # As an ad hoc solution, we'll just sample a bunch of random xf's in the unit ball (norm=1)
+            # in order to model the different responses we may get (since we don't have a fixed response set).
             num_xf_samples = 10
             xfs = [aprel.util_funs.get_random_normalized_vector(d) for _ in range(num_xf_samples)]
 
@@ -208,14 +200,25 @@ class SoftmaxUser(User):
                     ideal_reward = r
                     ideal_trajectory = trajectory
 
+            # Calculation of matrix A
             feature_diff = ideal_trajectory.features - query.slate[0].features
-            for i, xf in enumerate(xfs):
-                lognumerator = np.log(d) + np.dot(xf, self.params['weights']) * np.dot(xf, feature_diff)
-                assert type(lognumerator) is float
-                logdenominator = np.log(np.dot(self.params['weights'], feature_diff))
-                assert type(logdenominator) is float
-                logprobs[i] = lognumerator - logdenominator
+            A = np.expand_dims(self.params['weights'], axis=-1) @ np.expand_dims(feature_diff, axis=-1).T
 
+            # Monte Carlo estimate of surface integral (denominator)
+            num_monte_carlo_samples = 100
+            X = np.random.randn(num_monte_carlo_samples, d)
+            X = X / np.linalg.norm(X, axis=-1)
+            integrand = np.mean(np.exp(np.sum((X @ A) * X, axis=-1)))
+            surface_area = 2 * np.pi**(d / 2) / ssp.gamma(d / 2)
+            denominator = surface_area * integrand
+            logdenominator = np.log(denominator)
+            assert np.isscalar(logdenominator)
+
+            for i, xf in enumerate(xfs):
+                xf = np.expand_dims(xf, axis=-1)
+                lognumerator = xf.T @ A @ xf
+                assert np.isscalar(lognumerator)
+                logprobs[i] = lognumerator - logdenominator
             return logprobs
 
         elif isinstance(query, WeakComparisonQuery):
@@ -267,9 +270,20 @@ class SoftmaxUser(User):
                     ideal_trajectory = trajectory
 
             feature_diff = ideal_trajectory.features - data.query.slate[0].features
-            lognumerator = np.log(d) + np.dot(xf, self.params['weights']) * np.dot(xf, feature_diff)
+            A = np.expand_dims(self.params['weights'], axis=-1) @ np.expand_dims(feature_diff, axis=-1).T
+
+            xf = np.expand_dims(xf, axis=-1)
+            lognumerator = xf.T @ A @ xf
             assert np.isscalar(lognumerator)
-            logdenominator = np.log(np.dot(self.params['weights'], feature_diff))
+
+            # Monte Carlo estimate of surface integral (denominator)
+            num_monte_carlo_samples = 100
+            X = np.random.randn(num_monte_carlo_samples, d)
+            X = X / np.linalg.norm(X, axis=-1)
+            integrand = np.mean(np.exp(np.sum((X @ A) * X, axis=-1)))
+            surface_area = 2 * np.pi**(d / 2) / ssp.gamma(d / 2)
+            denominator = surface_area * integrand
+            logdenominator = np.log(denominator)
             assert np.isscalar(logdenominator)
 
             return lognumerator - logdenominator

@@ -207,7 +207,7 @@ class SoftmaxUser(User):
             # Monte Carlo estimate of surface integral (denominator)
             num_monte_carlo_samples = 100
             X = np.random.randn(num_monte_carlo_samples, d)
-            X = X / np.linalg.norm(X, axis=-1)
+            X = X / np.linalg.norm(X, axis=-1, keepdims=True)
             integrand = np.mean(np.exp(np.sum((X @ A) * X, axis=-1)))
             surface_area = 2 * np.pi**(d / 2) / ssp.gamma(d / 2)
             denominator = surface_area * integrand
@@ -217,6 +217,7 @@ class SoftmaxUser(User):
             for i, xf in enumerate(xfs):
                 xf = np.expand_dims(xf, axis=-1)
                 lognumerator = xf.T @ A @ xf
+                lognumerator = lognumerator.item()
                 assert np.isscalar(lognumerator)
                 logprobs[i] = lognumerator - logdenominator
             return logprobs
@@ -274,12 +275,16 @@ class SoftmaxUser(User):
 
             xf = np.expand_dims(xf, axis=-1)
             lognumerator = xf.T @ A @ xf
+            lognumerator = lognumerator.item()
+            # print("xf:", xf)
+            # print("A:", A)
+            # print("lognumerator:", lognumerator)
             assert np.isscalar(lognumerator)
 
             # Monte Carlo estimate of surface integral (denominator)
             num_monte_carlo_samples = 100
             X = np.random.randn(num_monte_carlo_samples, d)
-            X = X / np.linalg.norm(X, axis=-1)
+            X = X / np.linalg.norm(X, axis=-1, keepdims=True)
             integrand = np.mean(np.exp(np.sum((X @ A) * X, axis=-1)))
             surface_area = 2 * np.pi**(d / 2) / ssp.gamma(d / 2)
             denominator = surface_area * integrand

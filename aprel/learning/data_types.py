@@ -236,8 +236,12 @@ class NLCommandQuery(Query):
             #  We could do this by using the `response_set` variable to instead keep track of valid strings.
             if not isinstance(selection, str):
                 selection = None
+            try:
+                selection = self.lang_encoder_func(selection)
+            except ValueError:
+                print("The entered command string was not recognized. Please try again!")
+                selection = None
 
-        selection = self.lang_encoder_func(selection)
         return selection
 
 

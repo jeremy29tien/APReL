@@ -126,14 +126,19 @@ class SamplingBasedBelief(LinearRewardBelief):
         logprobs.append(curr_logprob)
         for _ in range(burnin + thin * self.num_samples - 1):
             next_point = proposal_distribution(curr_point)
+            # print("next_point:", next_point)
             sampling_user.params = next_point
             next_logprob = self.logprior(next_point) + sampling_user.loglikelihood_dataset(self.dataset)
+            # print("next_logprob:", next_logprob)
+            # print("curr_logprob:", curr_logprob)
             if np.log(np.random.rand()) < next_logprob - curr_logprob:
+                # print("np.log(np.random.rand()) < next_logprob - curr_logprob")
                 curr_point = next_point.copy()
                 curr_logprob = next_logprob
             samples.append(curr_point)
             logprobs.append(curr_logprob)
         self.samples, self.logprobs = samples[burnin::thin], logprobs[burnin::thin]
+        # print("self.samples:", self.samples)
 
     @property
     def mean(self) -> Dict:

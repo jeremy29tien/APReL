@@ -200,10 +200,10 @@ class NLCommandQuery(Query):
                                                               list), 'Query constructor requires a TrajectorySet object for the slate.'
         self.nl_comps = nl_comps
         self.nl_embeddings = nl_embeddings
+        self.lang_encoder_func = lang_encoder_func
         self.slate = slate
         assert (self.K == 1), 'Command queries must have exactly 1 reference trajectory.'
         # self.ideal_trajectory = ideal_trajectory
-        self.lang_encoder_func = lang_encoder_func
 
     @property
     def slate(self) -> TrajectorySet:

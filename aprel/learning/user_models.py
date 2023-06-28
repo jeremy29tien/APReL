@@ -204,8 +204,7 @@ class SoftmaxUser(User):
                 num_xf_samples = 10
                 xfs = [aprel.util_funs.get_random_normalized_vector(d) for _ in range(num_xf_samples)]
             else:
-                print("query.response_set:", query.response_set)
-                num_xf_samples = query.response_set.shape[0]
+                num_xf_samples = len(query.response_set)
                 xfs = [query.response_set[i] for i in range(num_xf_samples)]
 
             logprobs = np.zeros(num_xf_samples)

@@ -181,15 +181,6 @@ class SoftmaxUser(User):
             return rewards - ssp.logsumexp(rewards)
 
         elif isinstance(query, NLCommandQuery):
-            d = len(self.params['weights'])
-
-            # As an ad hoc solution, we'll just sample a bunch of random xf's in the unit ball (norm=1)
-            # in order to model the different responses we may get (since we don't have a fixed response set).
-            num_xf_samples = 10
-            xfs = [aprel.util_funs.get_random_normalized_vector(d) for _ in range(num_xf_samples)]
-
-            logprobs = np.zeros(num_xf_samples)
-
             # Find ideal trajectory's features \phi star for log likelihood computation
             ideal_trajectory = None
             ideal_reward = -np.inf
@@ -200,9 +191,27 @@ class SoftmaxUser(User):
                     ideal_reward = r
                     ideal_trajectory = trajectory
 
+            weights = self.params['weights']
+            d = len(weights)
+            if d != len(ideal_trajectory.features):
+                assert 'approx_weights' in self.params
+                weights = self.params['approx_weights']
+                d = len(weights)
+
+            if query.response_set is None:
+                # As an ad hoc solution, we'll just sample a bunch of random xf's in the unit ball (norm=1)
+                # in order to model the different responses we may get (since we don't have a fixed response set).
+                num_xf_samples = 10
+                xfs = [aprel.util_funs.get_random_normalized_vector(d) for _ in range(num_xf_samples)]
+            else:
+                num_xf_samples = query.response_set.shape[0]
+                xfs = [query.response_set[i] for i in range(num_xf_samples)]
+
+            logprobs = np.zeros(num_xf_samples)
+
             # Calculation of matrix A
             feature_diff = ideal_trajectory.features - query.slate[0].features
-            A = np.expand_dims(self.params['weights'], axis=-1) @ np.expand_dims(feature_diff, axis=-1).T
+            A = np.expand_dims(weights, axis=-1) @ np.expand_dims(feature_diff, axis=-1).T
 
             # Monte Carlo estimate of surface integral (denominator)
             num_monte_carlo_samples = 100
@@ -257,9 +266,6 @@ class SoftmaxUser(User):
             return rewards[data.response] - ssp.logsumexp(rewards)
 
         elif isinstance(data, NLCommand):
-            d = len(self.params['weights'])
-            xf = data.response / np.linalg.norm(data.response)
-
             # Find ideal trajectory's features \phi star for log likelihood computation
             ideal_trajectory = None
             ideal_reward = -np.inf
@@ -270,8 +276,17 @@ class SoftmaxUser(User):
                     ideal_reward = r
                     ideal_trajectory = trajectory
 
+            weights = self.params['weights']
+            d = len(weights)
+            if d != len(ideal_trajectory.features):
+                assert 'approx_weights' in self.params
+                weights = self.params['approx_weights']
+                d = len(weights)
+
+            xf = data.response / np.linalg.norm(data.response)
+
             feature_diff = ideal_trajectory.features - data.query.slate[0].features
-            A = np.expand_dims(self.params['weights'], axis=-1) @ np.expand_dims(feature_diff, axis=-1).T
+            A = np.expand_dims(weights, axis=-1) @ np.expand_dims(feature_diff, axis=-1).T
 
             xf = np.expand_dims(xf, axis=-1)
             lognumerator = xf.T @ A @ xf
@@ -345,6 +360,58 @@ class CustomFeatureUser(SoftmaxUser):
         params_dict_copy = params_dict.copy()
 
         super(CustomFeatureUser, self).__init__(params_dict_copy)
+
+    def response_logprobabilities(self, query: Query) -> np.array:
+        if isinstance(query, NLCommandQuery):
+            true_reward_dim = len(self.params['weights'])
+            feature_dim = len(query.slate[0].features)
+
+            # If the provided reward is not the same dimensions as the feature dim, we need to
+            # create a transformed reward that approximates the provided reward.
+            if true_reward_dim != feature_dim:
+                # Find ideal trajectory's features \phi star
+                ideal_trajectory = None
+                ideal_reward = -np.inf
+                assert 'trajectory_set' in self.params
+                for trajectory in self.params['trajectory_set']:
+                    r = self.reward(trajectory)  # reward based on true reward
+                    if r > ideal_reward:
+                        ideal_reward = r
+                        ideal_trajectory = trajectory
+
+                trajectory_features = np.asarray([traj.features for traj in self.params['trajectory_set']])
+                approx_reward = (ideal_trajectory.features - np.mean(trajectory_features, axis=0)) / np.std(trajectory_features, axis=0)
+                params_dict_copy = self.params.copy()
+                params_dict_copy['approx_weights'] = approx_reward
+                self.params = params_dict_copy
+
+        return super(CustomFeatureUser, self).response_logprobabilities(query)
+
+    def loglikelihood(self, data: QueryWithResponse) -> float:
+        if isinstance(data, NLCommand):
+            true_reward_dim = len(self.params['weights'])
+            feature_dim = len(data.query.slate[0].features)
+
+            # If the provided reward is not the same dimensions as the feature dim, we need to
+            # create a transformed reward that approximates the provided reward.
+            if true_reward_dim != feature_dim:
+                # Find ideal trajectory's features \phi star
+                ideal_trajectory = None
+                ideal_reward = -np.inf
+                assert 'trajectory_set' in self.params
+                for trajectory in self.params['trajectory_set']:
+                    r = self.reward(trajectory)  # reward based on true reward
+                    if r > ideal_reward:
+                        ideal_reward = r
+                        ideal_trajectory = trajectory
+
+                trajectory_features = np.asarray([traj.features for traj in self.params['trajectory_set']])
+                approx_reward = (ideal_trajectory.features - np.mean(trajectory_features, axis=0)) / np.std(trajectory_features, axis=0)
+                params_dict_copy = self.params.copy()
+                params_dict_copy['approx_weights'] = approx_reward
+                self.params = params_dict_copy
+        else:
+            return super(CustomFeatureUser, self).loglikelihood(data)
 
     def reward(self, trajectories: Union[Trajectory, TrajectorySet]) -> Union[float, np.array]:
         # TODO: Can try to pre-compute these values and store them in the

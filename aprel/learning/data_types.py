@@ -194,10 +194,12 @@ class NLCommandQuery(Query):
         AssertionError: if slate has anything other than 1 trajectory.
     """
 
-    def __init__(self, slate: Union[TrajectorySet, List[Trajectory]], lang_encoder_func: Callable):
+    def __init__(self, slate: Union[TrajectorySet, List[Trajectory]], lang_encoder_func: Callable, nl_comps: List[str] = None, nl_embeddings: np.array = None):
         super(NLCommandQuery, self).__init__()
         assert isinstance(slate, TrajectorySet) or isinstance(slate,
                                                               list), 'Query constructor requires a TrajectorySet object for the slate.'
+        self.nl_comps = nl_comps
+        self.nl_embeddings = nl_embeddings
         self.slate = slate
         assert (self.K == 1), 'Command queries must have exactly 1 reference trajectory.'
         # self.ideal_trajectory = ideal_trajectory
@@ -214,7 +216,10 @@ class NLCommandQuery(Query):
         self._slate = new_slate if isinstance(new_slate, TrajectorySet) else TrajectorySet(new_slate)
         self.K = self._slate.size
         # TODO: I'm pretty sure we don't need a response set?
-        # self.response_set = np.arange(self.K)
+        if self.nl_comps is not None and self.nl_embeddings is not None:
+            self.response_set = self.nl_embeddings
+        else:
+            self.response_set = None
 
     def visualize(self, delay: float = 0.) -> np.array:
         """Visualizes the query and interactively asks for a response.

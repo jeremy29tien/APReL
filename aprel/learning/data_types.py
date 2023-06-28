@@ -217,7 +217,9 @@ class NLCommandQuery(Query):
         self.K = self._slate.size
         # TODO: I'm pretty sure we don't need a response set?
         if self.nl_comps is not None and self.nl_embeddings is not None:
-            self.response_set = self.nl_embeddings
+            self.response_set = []
+            for nl_comp in self.nl_comps:
+                self.response_set.append(self.lang_encoder_func(nl_comp))
         else:
             self.response_set = None
 

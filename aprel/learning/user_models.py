@@ -401,6 +401,7 @@ class CustomFeatureUser(SoftmaxUser):
                     if r > ideal_reward:
                         ideal_reward = r
                         ideal_trajectory = trajectory
+                print("Done finding phi star.")
 
                 trajectory_features = np.asarray([traj.features for traj in self.params['trajectory_set']])
                 approx_reward = (ideal_trajectory.features - np.mean(trajectory_features, axis=0)) / np.std(trajectory_features, axis=0)

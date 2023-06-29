@@ -144,14 +144,15 @@ class User:
         responses = []
         for query in queries:
             probs = self.response_probabilities(query)
-            try:
-                idx = np.random.choice(len(probs), p=probs)
-            except ValueError:
-                if np.abs(np.sum(probs) - 1) < 1e-3:
-                    probs = probs / np.sum(probs)
-                    idx = np.random.choice(len(probs), p=probs)
-                else:
-                    raise ValueError("probabilities do not sum to 1")
+            idx = np.argmax(probs)
+            # try:
+            #     idx = np.random.choice(len(probs), p=probs)
+            # except ValueError:
+            #     if np.abs(np.sum(probs) - 1) < 1e-3:
+            #         probs = probs / np.sum(probs)
+            #         idx = np.random.choice(len(probs), p=probs)
+            #     else:
+            #         raise ValueError("probabilities do not sum to 1")
 
             responses.append(query.response_set[idx])
         return responses

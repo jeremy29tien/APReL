@@ -205,7 +205,7 @@ class SoftmaxUser(User):
                 xfs = [aprel.util_funs.get_random_normalized_vector(d) for _ in range(num_xf_samples)]
             else:
                 num_xf_samples = len(query.response_set)
-                xfs = [query.response_set[i] for i in range(num_xf_samples)]
+                xfs = [query.response_set[i] / np.linalg.norm(query.response_set[i]) for i in range(num_xf_samples)]
 
             logprobs = np.zeros(num_xf_samples)
 
@@ -213,14 +213,20 @@ class SoftmaxUser(User):
             feature_diff = ideal_trajectory.features - query.slate[0].features
             A = np.expand_dims(weights, axis=-1) @ np.expand_dims(feature_diff, axis=-1).T
 
-            # Monte Carlo estimate of surface integral (denominator)
-            num_monte_carlo_samples = 100
-            X = np.random.randn(num_monte_carlo_samples, d)
-            X = X / np.linalg.norm(X, axis=-1, keepdims=True)
-            integrand = np.mean(np.exp(np.sum((X @ A) * X, axis=-1)))
-            surface_area = 2 * np.pi**(d / 2) / ssp.gamma(d / 2)
-            denominator = surface_area * integrand
-            logdenominator = np.log(denominator)
+            if query.response_set is None:
+                # Monte Carlo estimate of surface integral (denominator)
+                num_monte_carlo_samples = 100
+                X = np.random.randn(num_monte_carlo_samples, d)
+                X = X / np.linalg.norm(X, axis=-1, keepdims=True)
+                integrand = np.mean(np.exp(np.sum((X @ A) * X, axis=-1)))
+                surface_area = 2 * np.pi**(d / 2) / ssp.gamma(d / 2)
+                denominator = surface_area * integrand
+                logdenominator = np.log(denominator)
+            else:
+                # Denominator is just sum instead of integral.
+                X = np.asarray(xfs)
+                logdenominator = ssp.logsumexp(np.sum((X @ A) * X, axis=-1))
+
             assert np.isscalar(logdenominator)
 
             for i, xf in enumerate(xfs):

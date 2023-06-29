@@ -145,6 +145,7 @@ class User:
         for query in queries:
             probs = self.response_probabilities(query)
             print("probs:", probs)
+            print("sum of probs:", np.sum(probs))
             idx = np.random.choice(len(probs), p=probs)
             responses.append(query.response_set[idx])
         return responses

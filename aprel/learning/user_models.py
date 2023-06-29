@@ -146,7 +146,15 @@ class User:
             probs = self.response_probabilities(query)
             print("probs:", probs)
             print("sum of probs:", np.sum(probs))
-            idx = np.random.choice(len(probs), p=probs)
+            try:
+                idx = np.random.choice(len(probs), p=probs)
+            except ValueError:
+                if np.abs(np.sum(probs) - 1) < 1e-3:
+                    probs = probs / np.sum(probs)
+                    idx = np.random.choice(len(probs), p=probs)
+                else:
+                    raise ValueError("probabilities do not sum to 1")
+
             responses.append(query.response_set[idx])
         return responses
 

@@ -297,6 +297,7 @@ class SoftmaxUser(User):
                 assert 'approx_weights' in self.params
                 weights = self.params['approx_weights']
                 d = len(weights)
+                print("Using approx weights...")
 
             xf = data.response / np.linalg.norm(data.response)
 
@@ -435,8 +436,6 @@ class CustomFeatureUser(SoftmaxUser):
         return super(CustomFeatureUser, self).loglikelihood(data)
 
     def reward(self, trajectories: Union[Trajectory, TrajectorySet]) -> Union[float, np.array]:
-        # TODO: Can try to pre-compute these values and store them in the
-        #  Trajectory/TrajectorySet for speed up if necessary
         if isinstance(trajectories, TrajectorySet):
             features_matrix = []
             for trajectory in trajectories:

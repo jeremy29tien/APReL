@@ -206,7 +206,7 @@ class SoftmaxUser(User):
                 assert 'approx_weights' in self.params
                 weights = self.params['approx_weights']
                 d = len(weights)
-                print("Using approx weights...")
+                # print("Using approx weights...")
 
             if query.response_set is None:
                 # As an ad hoc solution, we'll just sample a bunch of random xf's in the unit ball (norm=1)
@@ -298,7 +298,7 @@ class SoftmaxUser(User):
                 assert 'approx_weights' in self.params
                 weights = self.params['approx_weights']
                 d = len(weights)
-                print("Using approx weights...")
+                # print("Using approx weights...")
 
             xf = data.response / np.linalg.norm(data.response)
 

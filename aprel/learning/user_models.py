@@ -438,10 +438,23 @@ class CustomFeatureUser(SoftmaxUser):
         # TODO: Can try to pre-compute these values and store them in the
         #  Trajectory/TrajectorySet for speed up if necessary
         if isinstance(trajectories, TrajectorySet):
-            features_matrix = np.array([self.params['feature_func'](trajectory.trajectory) for trajectory in trajectories])
+            features_matrix = []
+            for trajectory in trajectories:
+                if trajectory.aux_features is None:
+                    features = self.params['feature_func'](trajectory.trajectory)
+                    trajectory.aux_features = features
+                else:
+                    features = trajectory.aux_features
+                features_matrix.append(features)
+            features_matrix = np.asarray(features_matrix)
+            # features_matrix = np.array([self.params['feature_func'](trajectory.trajectory) for trajectory in trajectories])
             return np.dot(features_matrix, self.params['weights'])
         else:
-            features = self.params['feature_func'](trajectories.trajectory)
+            if trajectories.aux_features is None:
+                features = self.params['feature_func'](trajectories.trajectory)
+                trajectories.aux_features = features
+            else:
+                features = trajectories.aux_features
             return np.dot(features, self.params['weights'])
 
 

@@ -27,10 +27,11 @@ class Trajectory:
         features (numpy.array): Features of the trajectory.
         clip_path (str): The path to the video clip that keeps the visualization of the trajectory.
     """
-    def __init__(self, env: Environment, trajectory: List[Tuple[np.array, np.array]], clip_path: str = None):
+    def __init__(self, env: Environment, trajectory: List[Tuple[np.array, np.array]], clip_path: str = None, aux_features: List = None):
         self.trajectory = trajectory
         self.features = env.features(trajectory)
         self.clip_path = clip_path
+        self.aux_features = aux_features
         
     def __getitem__(self, t: int) -> Tuple[np.array, np.array]:
         """Returns the state-action pair at time step t of the trajectory."""

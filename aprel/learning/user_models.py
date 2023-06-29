@@ -311,14 +311,21 @@ class SoftmaxUser(User):
             # print("lognumerator:", lognumerator)
             assert np.isscalar(lognumerator)
 
-            # Monte Carlo estimate of surface integral (denominator)
-            num_monte_carlo_samples = 100
-            X = np.random.randn(num_monte_carlo_samples, d)
-            X = X / np.linalg.norm(X, axis=-1, keepdims=True)
-            integrand = np.mean(np.exp(np.sum((X @ A) * X, axis=-1)))
-            surface_area = 2 * np.pi**(d / 2) / ssp.gamma(d / 2)
-            denominator = surface_area * integrand
-            logdenominator = np.log(denominator)
+            if data.query.response_set is None:
+                # Monte Carlo estimate of surface integral (denominator)
+                num_monte_carlo_samples = 100
+                X = np.random.randn(num_monte_carlo_samples, d)
+                X = X / np.linalg.norm(X, axis=-1, keepdims=True)
+                integrand = np.mean(np.exp(np.sum((X @ A) * X, axis=-1)))
+                surface_area = 2 * np.pi**(d / 2) / ssp.gamma(d / 2)
+                denominator = surface_area * integrand
+                logdenominator = np.log(denominator)
+            else:
+                # Denominator is just sum instead of integral.
+                X = np.asarray(data.query.response_set)
+                X = X / np.linalg.norm(X, axis=-1, keepdims=True)
+                logdenominator = ssp.logsumexp(np.sum((X @ A) * X, axis=-1))
+
             assert np.isscalar(logdenominator)
 
             return lognumerator - logdenominator

@@ -144,8 +144,6 @@ class User:
         responses = []
         for query in queries:
             probs = self.response_probabilities(query)
-            print("probs:", probs)
-            print("sum of probs:", np.sum(probs))
             try:
                 idx = np.random.choice(len(probs), p=probs)
             except ValueError:

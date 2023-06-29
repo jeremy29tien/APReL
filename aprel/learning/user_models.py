@@ -395,6 +395,7 @@ class CustomFeatureUser(SoftmaxUser):
                 ideal_trajectory = None
                 ideal_reward = -np.inf
                 assert 'trajectory_set' in self.params
+                print("Finding phi star...")
                 for trajectory in self.params['trajectory_set']:
                     r = self.reward(trajectory)  # reward based on true reward
                     if r > ideal_reward:

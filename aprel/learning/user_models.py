@@ -434,8 +434,7 @@ class CustomFeatureUser(SoftmaxUser):
                 params_dict_copy = self.params.copy()
                 params_dict_copy['approx_weights'] = approx_reward
                 self.params = params_dict_copy
-        else:
-            return super(CustomFeatureUser, self).loglikelihood(data)
+        return super(CustomFeatureUser, self).loglikelihood(data)
 
     def reward(self, trajectories: Union[Trajectory, TrajectorySet]) -> Union[float, np.array]:
         # TODO: Can try to pre-compute these values and store them in the

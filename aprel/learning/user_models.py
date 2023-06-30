@@ -144,15 +144,15 @@ class User:
         responses = []
         for query in queries:
             probs = self.response_probabilities(query)
-            idx = np.argmax(probs)
-            # try:
-            #     idx = np.random.choice(len(probs), p=probs)
-            # except ValueError:
-            #     if np.abs(np.sum(probs) - 1) < 1e-3:
-            #         probs = probs / np.sum(probs)
-            #         idx = np.random.choice(len(probs), p=probs)
-            #     else:
-            #         raise ValueError("probabilities do not sum to 1")
+            # idx = np.argmax(probs)  # This line is just for debugging purposes.
+            try:
+                idx = np.random.choice(len(probs), p=probs)
+            except ValueError:
+                if np.abs(np.sum(probs) - 1) < 1e-3:
+                    probs = probs / np.sum(probs)
+                    idx = np.random.choice(len(probs), p=probs)
+                else:
+                    raise ValueError("probabilities do not sum to 1")
 
             responses.append(query.response_set[idx])
         return responses
@@ -228,20 +228,20 @@ class SoftmaxUser(User):
                 num_monte_carlo_samples = 100
                 X = np.random.randn(num_monte_carlo_samples, d)
                 X = X / np.linalg.norm(X, axis=-1, keepdims=True)
-                integrand = np.mean(np.exp(np.sum((X @ A) * X, axis=-1)))
+                integrand = np.mean(np.exp(self.params['beta'] * np.sum((X @ A) * X, axis=-1)))
                 surface_area = 2 * np.pi**(d / 2) / ssp.gamma(d / 2)
                 denominator = surface_area * integrand
                 logdenominator = np.log(denominator)
             else:
                 # Denominator is just sum instead of integral.
                 X = np.asarray(xfs)
-                logdenominator = ssp.logsumexp(np.sum((X @ A) * X, axis=-1))
+                logdenominator = ssp.logsumexp(self.params['beta'] * np.sum((X @ A) * X, axis=-1))
 
             assert np.isscalar(logdenominator)
 
             for i, xf in enumerate(xfs):
                 xf = np.expand_dims(xf, axis=-1)
-                lognumerator = xf.T @ A @ xf
+                lognumerator = self.params['beta'] * (xf.T @ A @ xf)
                 lognumerator = lognumerator.item()
                 assert np.isscalar(lognumerator)
                 logprobs[i] = lognumerator - logdenominator
@@ -306,7 +306,7 @@ class SoftmaxUser(User):
             A = np.expand_dims(weights, axis=-1) @ np.expand_dims(feature_diff, axis=-1).T
 
             xf = np.expand_dims(xf, axis=-1)
-            lognumerator = xf.T @ A @ xf
+            lognumerator = self.params['beta'] * (xf.T @ A @ xf)
             lognumerator = lognumerator.item()
             # print("xf:", xf)
             # print("A:", A)
@@ -319,7 +319,7 @@ class SoftmaxUser(User):
                 num_monte_carlo_samples = 100
                 X = np.random.randn(num_monte_carlo_samples, d)
                 X = X / np.linalg.norm(X, axis=-1, keepdims=True)
-                integrand = np.mean(np.exp(np.sum((X @ A) * X, axis=-1)))
+                integrand = np.mean(np.exp(self.params['beta'] * np.sum((X @ A) * X, axis=-1)))
                 surface_area = 2 * np.pi**(d / 2) / ssp.gamma(d / 2)
                 denominator = surface_area * integrand
                 logdenominator = np.log(denominator)
@@ -327,7 +327,7 @@ class SoftmaxUser(User):
                 # Denominator is just sum instead of integral.
                 X = np.asarray(data.query.response_set)
                 X = X / np.linalg.norm(X, axis=-1, keepdims=True)
-                logdenominator = ssp.logsumexp(np.sum((X @ A) * X, axis=-1))
+                logdenominator = ssp.logsumexp(self.params['beta'] * np.sum((X @ A) * X, axis=-1))
 
                 # # Alternate method of calculation for debugging
                 # denominator_alt = 0

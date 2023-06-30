@@ -314,6 +314,7 @@ class SoftmaxUser(User):
             assert np.isscalar(lognumerator)
 
             if data.query.response_set is None:
+                print("SHOULD NOT BE PRINTED.")
                 # Monte Carlo estimate of surface integral (denominator)
                 num_monte_carlo_samples = 100
                 X = np.random.randn(num_monte_carlo_samples, d)

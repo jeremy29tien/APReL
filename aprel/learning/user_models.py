@@ -329,17 +329,17 @@ class SoftmaxUser(User):
                 X = X / np.linalg.norm(X, axis=-1, keepdims=True)
                 logdenominator = ssp.logsumexp(np.sum((X @ A) * X, axis=-1))
 
-                # Alternate method of calculation for debugging
-                denominator_alt = 0
-                for x in data.query.response_set:
-                    x = x / np.linalg.norm(x)
-                    x = np.expand_dims(x, axis=-1)
-                    denominator_alt += np.exp(x.T @ A @ x)
-                logdenominator_alt = np.log(denominator_alt)
-
-                print("logdenominator:", logdenominator)
-                print("logdenominator_alt:", logdenominator_alt)
-                assert logdenominator == logdenominator_alt
+                # # Alternate method of calculation for debugging
+                # denominator_alt = 0
+                # for x in data.query.response_set:
+                #     x = x / np.linalg.norm(x)
+                #     x = np.expand_dims(x, axis=-1)
+                #     denominator_alt += np.exp(x.T @ A @ x)
+                # logdenominator_alt = np.log(denominator_alt).item()
+                #
+                # print("logdenominator:", logdenominator)
+                # print("logdenominator_alt:", logdenominator_alt)
+                # assert logdenominator == logdenominator_alt
 
             assert np.isscalar(logdenominator)
 

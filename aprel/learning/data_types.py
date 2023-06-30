@@ -215,7 +215,6 @@ class NLCommandQuery(Query):
         """Sets the slate of trajectories in the query."""
         self._slate = new_slate if isinstance(new_slate, TrajectorySet) else TrajectorySet(new_slate)
         self.K = self._slate.size
-        # TODO: I'm pretty sure we don't need a response set?
         if self.nl_comps is not None and self.nl_embeddings is not None:
             self.response_set = []
             for nl_comp in self.nl_comps:
@@ -239,8 +238,6 @@ class NLCommandQuery(Query):
 
         while selection is None:
             selection = input('How would you improve this trajectory? Enter a command: ')
-            # TODO: Improve this to check for whether the command is valid or not?
-            #  We could do this by using the `response_set` variable to instead keep track of valid strings.
             if not isinstance(selection, str):
                 selection = None
             try:
@@ -271,9 +268,6 @@ class NLCommand(QueryWithResponse):
 
     def __init__(self, query: NLCommandQuery, response: np.array):
         super(NLCommand, self).__init__(query)
-        # TODO: Update this if we update response_set to check for valid string commands.
-        # assert (response in self.query.response_set), 'Response ' + str(
-        #     response) + ' is out of bounds for a slate size of ' + str(self.query.K) + '.'
         self.response = response
 
 

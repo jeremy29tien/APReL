@@ -337,6 +337,8 @@ class SoftmaxUser(User):
                     denominator_alt += np.exp(x.T @ A @ x)
                 logdenominator_alt = np.log(denominator_alt)
 
+                print("logdenominator:", logdenominator)
+                print("logdenominator_alt:", logdenominator_alt)
                 assert logdenominator == logdenominator_alt
 
             assert np.isscalar(logdenominator)

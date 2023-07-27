@@ -145,9 +145,15 @@ class PreferenceQuery(Query):
             int: The response of the user.
         """
         for i in range(self.K):
-            print('Playing trajectory #' + str(i))
-            time.sleep(delay)
-            self.slate[i].visualize()
+            replay = None
+            while replay is None:
+                print('Playing trajectory #' + str(i))
+                time.sleep(delay)
+                self.slate[i].visualize()
+
+                replay = input('Would you like to replay the trajectory? yes/no: ')
+                if replay == 'yes':
+                    replay = None
         selection = None
         while selection is None:
             selection = input('Which trajectory is the best? Enter a number: [0-' + str(self.K-1) + ']: ')
@@ -231,11 +237,17 @@ class NLCommandQuery(Query):
         Returns:
             int: The response of the user.
         """
-        print('Playing reference trajectory...')
-        time.sleep(delay)
-        self.slate[0].visualize()
-        selection = None
+        replay = None
+        while replay is None:
+            print('Playing reference trajectory...')
+            time.sleep(delay)
+            self.slate[0].visualize()
 
+            replay = input('Would you like to replay the trajectory? yes/no: ')
+            if replay == 'yes':
+                replay = None
+
+        selection = None
         while selection is None:
             selection = input('How would you improve this trajectory? Enter a command: ')
             if not isinstance(selection, str):

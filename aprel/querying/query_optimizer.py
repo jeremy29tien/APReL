@@ -10,7 +10,7 @@ import warnings
 from aprel.basics import Trajectory, TrajectorySet
 from aprel.learning import Belief, SamplingBasedBelief, User, SoftmaxUser
 from aprel.learning import Query, PreferenceQuery, NLCommandQuery, WeakComparisonQuery, FullRankingQuery
-from aprel.querying import mutual_information, volume_removal, disagreement, regret, random, thompson
+from aprel.querying import mutual_information, volume_removal, disagreement, regret, random, thompson, highest_reward
 from aprel.utils import kMedoids, dpp_mode, default_query_distance
 
 
@@ -28,7 +28,8 @@ class QueryOptimizer:
                                       'disagreement': disagreement,
                                       'regret': regret,
                                       'random': random,
-                                      'thompson': thompson}
+                                      'thompson': thompson,
+                                      'highest_reward': highest_reward}
 
 
 class QueryOptimizerDiscreteTrajectorySet(QueryOptimizer):
@@ -190,6 +191,14 @@ class QueryOptimizerDiscreteTrajectorySet(QueryOptimizer):
                 best_batch = [initial_query.copy() for _ in range(batch_size)]
                 for i in range(batch_size):
                     best_batch[i].slate = self.trajectory_set[np.random.choice(self.trajectory_set.size, size=initial_query.K, replace=False)]
+                return best_batch, np.array([1. for _ in range(batch_size)])
+            elif acquisition_func is highest_reward:
+                best_batch = [initial_query.copy() for _ in range(batch_size)]
+                for i in range(batch_size):
+                    rewards = np.dot(self.trajectory_set.features_matrix, np.asarray(belief.mean['weights']))
+                    rewards = np.squeeze(rewards)
+                    best_traj_i = np.argmax(rewards)
+                    best_batch[i].slate = self.trajectory_set[np.asarray([best_traj_i for _ in range(initial_query.K)])]
                 return best_batch, np.array([1. for _ in range(batch_size)])
                 
             elif acquisition_func is thompson and isinstance(belief, SamplingBasedBelief):

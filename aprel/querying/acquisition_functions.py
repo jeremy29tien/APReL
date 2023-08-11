@@ -151,3 +151,9 @@ def random():
     This function does nothing, but is added so that :py:mod:`aprel.querying.query_optimizer` can use it as a check.
     """
     pass # query optimizer handles the random querying -- it is computationally more efficient
+
+def highest_reward():
+    """
+    This function does nothing, but is added so that :py:mod:`aprel.querying.query_optimizer` can use it as a check.
+    """
+    pass
